@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CareerVerse — Merchant Navy v3</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#000;overflow:hidden;font-family:'Share Tech Mono',monospace;color:#e8f0fe}
+#c{display:block;width:100vw;height:100vh;cursor:crosshair}
+#hud{position:fixed;top:0;left:0;right:0;pointer-events:none;z-index:10;padding:14px}
+#hud-inner{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.hud-panel{background:rgba(4,10,20,0.88);border:1px solid #1a3a5c;border-radius:10px;padding:10px 14px;backdrop-filter:blur(8px)}
+#traits h4{font-family:'Orbitron',sans-serif;font-size:9px;color:#4fc3f7;margin-bottom:8px;letter-spacing:2px}
+.tr{display:flex;align-items:center;gap:8px;margin:4px 0;font-size:10px}
+.tr-label{width:80px;color:#8a9bb0}
+.bar{flex:1;height:4px;background:#0a1828;border-radius:2px;min-width:80px}
+.fill{height:4px;border-radius:2px;transition:width .6s}
+#loc-name{font-family:'Orbitron',sans-serif;font-size:13px;color:#4fc3f7;letter-spacing:2px}
+#loc-sub{font-size:10px;color:#4a6a8a;margin-top:3px}
+#compass{font-size:18px;margin-top:4px}
+#floor-tag{font-family:'Orbitron',sans-serif;font-size:9px;color:#ce93d8;margin-top:4px;letter-spacing:1px}
+#e-prompt{position:fixed;bottom:230px;left:50%;transform:translateX(-50%);background:rgba(4,10,20,0.92);border:1px solid #ff9800;color:#ffd580;padding:7px 20px;border-radius:24px;font-size:11px;z-index:15;display:none;letter-spacing:1px;animation:pulse 1.2s infinite}
+#stair-prompt{position:fixed;bottom:195px;left:50%;transform:translateX(-50%);background:rgba(4,10,20,0.92);border:1px solid #ce93d8;color:#ce93d8;padding:6px 18px;border-radius:24px;font-size:11px;z-index:15;display:none;letter-spacing:1px}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(255,152,0,.4)}50%{box-shadow:0 0 0 8px rgba(255,152,0,0)}}
+/* ARROW to next zone */
+#arrow-hud{position:fixed;bottom:150px;left:50%;transform:translateX(-50%);z-index:12;display:none;text-align:center;pointer-events:none}
+#arrow-box{background:rgba(4,10,20,0.92);border:1px solid #4fc3f7;border-radius:14px;padding:6px 18px;font-family:'Orbitron',sans-serif;font-size:10px;color:#4fc3f7;letter-spacing:1px;animation:abounce 1.4s ease-in-out infinite}
+#arrow-glyph{font-size:30px;line-height:1;display:block;animation:updown .8s ease-in-out infinite}
+@keyframes abounce{0%,100%{box-shadow:0 0 0 0 rgba(79,195,247,.4)}50%{box-shadow:0 0 0 10px rgba(79,195,247,0)}}
+@keyframes updown{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+/* Mission */
+#mission-overlay{position:fixed;inset:0;z-index:30;display:none;align-items:flex-end;justify-content:center;padding-bottom:28px;background:rgba(0,0,0,.7);backdrop-filter:blur(4px)}
+#mission-card{background:rgba(4,10,22,.98);border:1px solid #4fc3f7;border-radius:16px;padding:24px 28px;max-width:600px;width:94%;animation:slideUp .35s}
+@keyframes slideUp{from{transform:translateY(60px);opacity:0}to{transform:translateY(0);opacity:1}}
+#mission-zone{font-family:'Orbitron',sans-serif;font-size:9px;color:#4a6a8a;letter-spacing:3px;margin-bottom:4px}
+#mission-title{font-family:'Orbitron',sans-serif;font-size:18px;color:#ff9800;margin-bottom:10px}
+#mission-scene{font-size:12px;color:#8a9bb0;line-height:1.6;margin-bottom:6px}
+#mission-q{font-size:13px;color:#c8daf0;line-height:1.6;margin-bottom:18px;font-weight:bold}
+#choices-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.choice{background:#0a1828;border:1px solid #1a3a5c;border-radius:10px;padding:12px 14px;cursor:pointer;font-size:11px;color:#c8daf0;line-height:1.5;transition:all .2s;text-align:left;font-family:'Share Tech Mono',monospace;position:relative}
+.choice::before{content:attr(data-k);position:absolute;top:8px;right:10px;font-family:'Orbitron',sans-serif;font-size:9px;color:#1a4060}
+.choice:hover{border-color:#4fc3f7;background:#0d2040;transform:translateY(-2px)}
+.choice.ok{border-color:#1db954!important;background:#0a1e10!important}
+.choice.bad{border-color:#ef5350!important;background:#1a0808!important}
+/* Result */
+#result-pop{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:40;background:rgba(4,10,22,.97);border-radius:14px;padding:24px 32px;text-align:center;display:none;min-width:320px;animation:popIn .3s;border:1px solid #1a3a5c}
+@keyframes popIn{from{transform:translate(-50%,-50%) scale(.8);opacity:0}to{transform:translate(-50%,-50%) scale(1);opacity:1}}
+#result-icon{font-size:42px;margin-bottom:10px}
+#result-title{font-family:'Orbitron',sans-serif;font-size:14px;margin-bottom:8px}
+#result-text{font-size:11px;color:#8a9bb0;line-height:1.6;margin-bottom:16px;max-width:280px}
+#result-badges{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:16px}
+.badge{padding:4px 10px;border-radius:20px;font-size:10px;font-family:'Orbitron',sans-serif}
+#result-next{background:#4fc3f7;color:#000;border:none;padding:9px 24px;border-radius:8px;cursor:pointer;font-family:'Orbitron',sans-serif;font-size:11px;letter-spacing:1px}
+/* Zone unlock flash */
+#zone-flash{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:45;display:none;text-align:center;animation:popIn .4s}
+#zone-flash-inner{background:rgba(4,10,22,.97);border:2px solid #1db954;border-radius:18px;padding:20px 36px}
+#zone-flash-title{font-family:'Orbitron',sans-serif;font-size:20px;color:#1db954;margin-bottom:4px}
+#zone-flash-sub{font-family:'Orbitron',sans-serif;font-size:11px;color:#4fc3f7;letter-spacing:2px}
+/* Chat */
+#chat-overlay{position:fixed;inset:0;z-index:35;display:none;align-items:flex-end;justify-content:flex-start;padding:0 0 20px 20px;pointer-events:none}
+#chat-box{background:rgba(4,10,22,.97);border:1px solid #1a3a5c;border-radius:14px;width:380px;max-height:340px;display:flex;flex-direction:column;animation:slideUp .3s;pointer-events:all}
+#chat-head{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid #0f2030}
+.av{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+#chat-npc-name{font-family:'Orbitron',sans-serif;font-size:10px;color:#4fc3f7}
+#chat-npc-role{font-size:9px;color:#4a6a8a}
+#chat-x{margin-left:auto;background:none;border:none;color:#4a6a8a;cursor:pointer;font-size:18px}
+#chat-msgs{flex:1;overflow-y:auto;padding:10px 14px;display:flex;flex-direction:column;gap:6px;max-height:160px}
+.cmsg{font-size:11px;padding:7px 11px;border-radius:8px;max-width:85%;line-height:1.5}
+.cmsg.npc{background:#0d2040;color:#c8daf0;align-self:flex-start}
+.cmsg.you{background:#0a2818;color:#5eead4;align-self:flex-end}
+#qr{display:flex;flex-wrap:wrap;gap:5px;padding:6px 14px}
+.qrb{background:#0a1828;border:1px solid #1a3a5c;color:#4fc3f7;font-size:10px;padding:5px 10px;border-radius:16px;cursor:pointer;font-family:'Share Tech Mono',monospace;transition:all .15s}
+.qrb:hover{background:#1a3a60;border-color:#4fc3f7}
+#chat-row{display:flex;gap:6px;padding:8px 10px}
+#chat-in{flex:1;background:#080e1a;border:1px solid #1a3a5c;color:#e8f0fe;padding:7px 10px;border-radius:7px;font-family:'Share Tech Mono',monospace;font-size:11px}
+#chat-in:focus{outline:none;border-color:#4fc3f7}
+#chat-send{background:#4fc3f7;color:#000;border:none;padding:7px 14px;border-radius:7px;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:11px;font-weight:700}
+/* Toast */
+#toast{position:fixed;top:80px;left:50%;transform:translateX(-50%);padding:8px 20px;border-radius:20px;font-size:11px;z-index:50;display:none;pointer-events:none;letter-spacing:1px;white-space:nowrap}
+/* Minimap */
+#minimap{position:fixed;bottom:20px;right:20px;width:130px;height:138px;background:rgba(4,10,20,.88);border:1px solid #1a3a5c;border-radius:10px;z-index:10;overflow:hidden}
+#mm{display:block}
+#mm-label{position:absolute;bottom:3px;left:0;right:0;text-align:center;font-size:8px;font-family:'Orbitron',sans-serif;color:#4fc3f7;letter-spacing:1px}
+/* Controls */
+#ctrl{position:fixed;bottom:20px;left:20px;background:rgba(4,10,20,.82);border:1px solid #1a3a5c;border-radius:8px;padding:8px 12px;font-size:9px;color:#3a5a7a;z-index:10;line-height:2;letter-spacing:.5px}
+/* Sound btn */
+#snd-btn{position:fixed;top:14px;right:14px;background:rgba(4,10,20,.82);border:1px solid #1a3a5c;border-radius:8px;padding:6px 12px;font-size:10px;color:#4fc3f7;cursor:pointer;z-index:12;font-family:'Orbitron',sans-serif;letter-spacing:1px}
+/* Rain */
+#weather{position:fixed;inset:0;pointer-events:none;z-index:5;display:none}
+.rd{position:absolute;width:1.5px;background:rgba(150,200,255,.55);animation:rain linear infinite}
+@keyframes rain{from{transform:translateY(-20px) rotate(10deg)}to{transform:translateY(110vh) rotate(10deg)}}
+/* Intro */
+#intro{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at center,#040e1e 0%,#000 100%)}
+.ic{text-align:center;max-width:540px;padding:0 20px}
+.ic h1{font-family:'Orbitron',sans-serif;font-size:34px;font-weight:900;color:#4fc3f7;text-shadow:0 0 50px #4fc3f788;margin-bottom:6px}
+.ic .tg{color:#4a6a8a;font-size:12px;letter-spacing:3px;margin-bottom:18px}
+.ic p{color:#6a8aaa;font-size:12px;line-height:1.8;margin-bottom:18px}
+.rr{display:flex;gap:12px;justify-content:center;margin-bottom:22px}
+.rc{background:#0a1828;border:2px solid #1a3a5c;border-radius:12px;padding:14px;width:130px;cursor:pointer;transition:all .25s}
+.rc:hover,.rc.sel{border-color:#4fc3f7;background:#0d2040;box-shadow:0 0 22px rgba(79,195,247,.22)}
+.rc .ri{font-size:30px;margin-bottom:6px}
+.rc .rn{font-family:'Orbitron',sans-serif;font-size:9px;color:#4fc3f7;margin-bottom:3px}
+.rc .rd2{font-size:9px;color:#4a6a8a;line-height:1.4}
+.sbtn{font-family:'Orbitron',sans-serif;font-size:14px;background:linear-gradient(135deg,#0a3060,#1565c0);border:1px solid #4fc3f7;color:#4fc3f7;padding:14px 42px;border-radius:10px;cursor:pointer;letter-spacing:2px;transition:all .25s}
+.sbtn:hover{box-shadow:0 0 32px rgba(79,195,247,.45);transform:scale(1.04)}
+/* Report */
+#report{position:fixed;inset:0;z-index:60;display:none;overflow-y:auto;background:radial-gradient(ellipse at top,#040e1e,#000);padding:30px 20px}
+.ri2{max-width:600px;margin:0 auto}
+.ri2 h1{font-family:'Orbitron',sans-serif;font-size:22px;color:#4fc3f7;margin-bottom:4px}
+.rs{color:#4a6a8a;font-size:11px;margin-bottom:24px;letter-spacing:1px}
+.rsec{background:rgba(10,24,40,.9);border:1px solid #1a3a5c;border-radius:12px;padding:18px;margin-bottom:16px}
+.rsec h3{font-family:'Orbitron',sans-serif;font-size:10px;color:#ff9800;letter-spacing:2px;margin-bottom:12px}
+#verdict-box{background:rgba(10,28,18,.9);border:1px solid #1db954;border-radius:12px;padding:18px;margin-bottom:16px}
+#verdict-box h3{font-family:'Orbitron',sans-serif;font-size:10px;color:#1db954;letter-spacing:2px;margin-bottom:10px}
+#verdict-text{font-size:12px;color:#c8f0d0;line-height:1.8}
+.rtr{display:flex;align-items:center;gap:10px;margin:7px 0;font-size:11px}
+.rbar{flex:1;height:7px;background:#0a1828;border-radius:4px}
+.rfill{height:7px;border-radius:4px}
+#rep-paths{font-size:12px;line-height:2;color:#c8daf0}
+.rrst{font-family:'Orbitron',sans-serif;font-size:12px;background:#0a3060;border:1px solid #4fc3f7;color:#4fc3f7;padding:12px;border-radius:10px;cursor:pointer;width:100%;letter-spacing:1px;margin-top:8px}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<!-- HUD -->
+<div id="hud"><div id="hud-inner">
+  <div class="hud-panel" id="traits">
+    <h4>📊 TRAITS</h4>
+    <div class="tr"><span class="tr-label">Leadership</span><div class="bar"><div class="fill" id="b-lead" style="width:10%;background:#4fc3f7"></div></div><span id="v-lead" style="font-size:10px;color:#4fc3f7;min-width:26px;text-align:right">10</span></div>
+    <div class="tr"><span class="tr-label">Composure</span><div class="bar"><div class="fill" id="b-comp" style="width:10%;background:#1db954"></div></div><span id="v-comp" style="font-size:10px;color:#1db954;min-width:26px;text-align:right">10</span></div>
+    <div class="tr"><span class="tr-label">Teamwork</span><div class="bar"><div class="fill" id="b-team" style="width:10%;background:#ff9800"></div></div><span id="v-team" style="font-size:10px;color:#ff9800;min-width:26px;text-align:right">10</span></div>
+    <div class="tr"><span class="tr-label">Analytical</span><div class="bar"><div class="fill" id="b-anal" style="width:10%;background:#ce93d8"></div></div><span id="v-anal" style="font-size:10px;color:#ce93d8;min-width:26px;text-align:right">10</span></div>
+    <div class="tr"><span class="tr-label">Courage</span><div class="bar"><div class="fill" id="b-cour" style="width:10%;background:#ef5350"></div></div><span id="v-cour" style="font-size:10px;color:#ef5350;min-width:26px;text-align:right">10</span></div>
+  </div>
+  <div class="hud-panel" style="text-align:center">
+    <div id="loc-name">⚓ MV HORIZON</div>
+    <div id="loc-sub">Follow the arrow to first zone</div>
+    <div id="compass">🧭</div>
+    <div id="floor-tag">MAIN DECK</div>
+  </div>
+  <div class="hud-panel" style="font-size:10px;color:#4a6a8a;text-align:right;min-width:130px">
+    <div style="font-family:'Orbitron',sans-serif;font-size:9px;color:#ff9800;margin-bottom:6px">MISSIONS</div>
+    <div id="mission-count" style="font-size:22px;font-family:'Orbitron',sans-serif;color:#ffd700">0 / 5</div>
+    <div style="margin-top:4px;font-size:9px">complete</div>
+    <div id="next-label" style="margin-top:8px;font-size:9px;color:#4fc3f7;font-family:'Orbitron',sans-serif;letter-spacing:.5px"></div>
+  </div>
+</div></div>
+
+<div id="e-prompt">⬆ Press E — Talk to crew</div>
+<div id="stair-prompt">Press F — Use Stairs</div>
+<div id="arrow-hud"><div id="arrow-box"><span id="arrow-glyph">↑</span><span id="arrow-label">GO TO RADAR ZONE</span></div></div>
+
+<!-- Mission overlay -->
+<div id="mission-overlay"><div id="mission-card">
+  <div id="mission-zone"></div><div id="mission-title"></div>
+  <div id="mission-scene"></div><div id="mission-q"></div>
+  <div id="choices-grid"></div>
+</div></div>
+
+<!-- Result -->
+<div id="result-pop">
+  <div id="result-icon"></div><div id="result-title"></div>
+  <div id="result-text"></div><div id="result-badges"></div>
+  <button id="result-next" onclick="closeResult()">CONTINUE EXPLORING →</button>
+</div>
+
+<!-- Zone flash -->
+<div id="zone-flash"><div id="zone-flash-inner">
+  <div id="zone-flash-title">✅ ZONE CLEARED!</div>
+  <div id="zone-flash-sub">NEXT ZONE UNLOCKED</div>
+</div></div>
+
+<!-- Chat -->
+<div id="chat-overlay"><div id="chat-box">
+  <div id="chat-head">
+    <div class="av" id="chat-av"></div>
+    <div><div id="chat-npc-name"></div><div id="chat-npc-role"></div></div>
+    <button id="chat-x" onclick="closeChat()">✕</button>
+  </div>
+  <div id="chat-msgs"></div>
+  <div id="qr"></div>
+  <div id="chat-row">
+    <input id="chat-in" placeholder="Ask about this career..."/>
+    <button id="chat-send" onclick="sendChat()">Send</button>
+  </div>
+</div></div>
+
+<div id="toast"></div>
+<div id="minimap"><canvas id="mm" width="130" height="120"></canvas><div id="mm-label">DECK 0</div></div>
+<div id="ctrl">W A S D — Move<br>Mouse — Look<br>E — Talk to crew<br>F — Use Stairs<br>Scroll — Zoom</div>
+<button id="snd-btn" onclick="toggleSnd()">🔊 SND ON</button>
+<div id="weather"></div>
+
+<!-- Intro -->
+<div id="intro"><div class="ic">
+  <div style="font-size:52px;margin-bottom:10px">🚢</div>
+  <h1>MERCHANT NAVY</h1>
+  <div class="tg">CAREERVERSE · LIFE AT SEA SIMULATION</div>
+  <p>Board <strong style="color:#4fc3f7">MV Horizon</strong> — 200 metres of cargo vessel crossing the Indian Ocean.<br>Complete zones in order. Explore the engine basement. Talk to 9 crew members.</p>
+  <p style="color:#ff9800;font-size:11px;margin-bottom:18px">🎯 Sequential zones — complete each to unlock the next!</p>
+  <div class="rr">
+    <div class="rc sel" onclick="pickRole(this,'cadet')"><div class="ri">🧑‍✈️</div><div class="rn">DECK CADET</div><div class="rd2">Navigation & command</div></div>
+    <div class="rc" onclick="pickRole(this,'engineer')"><div class="ri">⚙️</div><div class="rn">ENGINE CADET</div><div class="rd2">Machinery & power</div></div>
+    <div class="rc" onclick="pickRole(this,'mess')"><div class="ri">👨‍🍳</div><div class="rn">MESS BOY</div><div class="rd2">Crew welfare</div></div>
+  </div>
+  <button class="sbtn" onclick="startGame()">⚓ BOARD THE SHIP</button>
+</div></div>
+
+<!-- Report -->
+<div id="report"><div class="ri2">
+  <h1>⚓ CAREER ANALYSIS REPORT</h1>
+  <div class="rs">MV HORIZON · VOYAGE COMPLETE</div>
+  <div id="verdict-box"><h3>🤖 AI VERDICT</h3><div id="verdict-text"></div></div>
+  <div class="rsec"><h3>📊 TRAIT SCORES</h3><div id="rep-traits"></div></div>
+  <div class="rsec"><h3>🧭 RECOMMENDED PATHS</h3><div id="rep-paths"></div></div>
+  <div class="rsec"><h3>💼 SALARY DATA (INDIA)</h3><div style="font-size:11px;color:#c8daf0;line-height:2">
+    Deck Cadet: ₹15k–25k/month • Third Officer: ₹1.5–2.5L • Chief Officer: ₹4–6L • Captain: ₹8–15L/month<br>
+    <span style="color:#4a6a8a;font-size:10px">Tax-free offshore. 6 months on / 4–6 months off.</span>
+  </div></div>
+  <button class="rrst" onclick="location.reload()">🌍 EXPLORE ANOTHER CAREER WORLD</button>
+</div></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ════════════════════════════════════════
+// AUDIO ENGINE
+// ════════════════════════════════════════
+let AC=null, sndOn=true, _rainSrc=null, _engOsc1=null, _engOsc2=null, _engGain=null;
+function initAC(){
+  if(AC) return;
+  AC = new (window.AudioContext||window.webkitAudioContext)();
+  startOcean(); startWind(); startEngineHum(); scheduleHorn();
+}
+function toggleSnd(){
+  sndOn=!sndOn;
+  document.getElementById('snd-btn').textContent=sndOn?'🔊 SND ON':'🔇 MUTED';
+  if(sndOn&&!AC) initAC();
+}
+
+/* Ocean waves */
+function startOcean(){
+  const loop=()=>{
+    if(!sndOn||!AC) return;
+    const b=AC.createBuffer(1,AC.sampleRate*3,AC.sampleRate), d=b.getChannelData(0);
+    for(let i=0;i<d.length;i++){
+      const t=i/AC.sampleRate;
+      d[i]=(Math.sin(6.28*(0.9+Math.random()*0.2)*t)+Math.sin(6.28*1.6*t)*0.4+(Math.random()*2-1)*0.1)*Math.sin(Math.PI*t/3)*0.06;
+    }
+    const s=AC.createBufferSource(), g=AC.createGain();
+    s.buffer=b; g.gain.value=0.25+Math.random()*0.2;
+    s.connect(g); g.connect(AC.destination); s.start();
+    s.onended=()=>setTimeout(loop,100+Math.random()*600);
+  };
+  loop();
+}
+
+/* Wind */
+function startWind(){
+  const loop=()=>{
+    if(!sndOn||!AC) return;
+    const n=AC.sampleRate*4, b=AC.createBuffer(1,n,AC.sampleRate), d=b.getChannelData(0);
+    for(let i=0;i<n;i++) d[i]=(Math.random()*2-1)*0.03;
+    const s=AC.createBufferSource(), f=AC.createBiquadFilter(), g=AC.createGain();
+    s.buffer=b; f.type='lowpass'; f.frequency.value=180+Math.random()*80;
+    g.gain.value=0.12+Math.random()*0.08;
+    s.connect(f); f.connect(g); g.connect(AC.destination); s.start();
+    s.onended=()=>setTimeout(loop,50);
+  };
+  loop();
+}
+
+/* Ship horn — deep foghorn */
+function playHorn(){
+  if(!AC||!sndOn) return;
+  const g=AC.createGain();
+  g.gain.setValueAtTime(0,AC.currentTime);
+  g.gain.linearRampToValueAtTime(0.35,AC.currentTime+0.4);
+  g.gain.setValueAtTime(0.35,AC.currentTime+2.6);
+  g.gain.linearRampToValueAtTime(0,AC.currentTime+3.4);
+  [[78,1],[156,0.35],[234,0.18]].forEach(([f,a])=>{
+    const o=AC.createOscillator(), og=AC.createGain();
+    o.type='sawtooth'; o.frequency.value=f; og.gain.value=a;
+    o.connect(og); og.connect(g); g.connect(AC.destination);
+    o.start(); o.stop(AC.currentTime+3.8);
+  });
+}
+let _hornT=null;
+function scheduleHorn(){
+  if(!sndOn) return;
+  _hornT=setTimeout(()=>{ playHorn(); scheduleHorn(); }, 18000+Math.random()*14000);
+}
+
+/* Engine hum (more audible in basement) */
+function startEngineHum(){
+  if(!AC||!sndOn) return;
+  _engOsc1=AC.createOscillator(); _engOsc2=AC.createOscillator();
+  _engOsc1.type='sawtooth'; _engOsc1.frequency.value=52;
+  _engOsc2.type='sine';     _engOsc2.frequency.value=104;
+  const f=AC.createBiquadFilter(); f.type='lowpass'; f.frequency.value=280;
+  _engGain=AC.createGain(); _engGain.gain.value=0;
+  _engOsc1.connect(f); _engOsc2.connect(f); f.connect(_engGain); _engGain.connect(AC.destination);
+  _engOsc1.start(); _engOsc2.start();
+}
+
+/* Rain */
+function startRain(){
+  if(!AC||!sndOn) return; stopRain();
+  const n=AC.sampleRate*2, b=AC.createBuffer(1,n,AC.sampleRate), d=b.getChannelData(0);
+  for(let i=0;i<n;i++) d[i]=(Math.random()*2-1)*0.28;
+  _rainSrc=AC.createBufferSource(); _rainSrc.buffer=b; _rainSrc.loop=true;
+  const f=AC.createBiquadFilter(); f.type='bandpass'; f.frequency.value=3200; f.Q.value=0.4;
+  const g=AC.createGain(); g.gain.value=0.1;
+  _rainSrc.connect(f); f.connect(g); g.connect(AC.destination); _rainSrc.start();
+}
+function stopRain(){ try{ if(_rainSrc){ _rainSrc.stop(); _rainSrc=null; } }catch(e){} }
+
+/* Alert beep */
+function beep(){
+  if(!AC||!sndOn) return;
+  [880,1100,880].forEach((f,i)=>{
+    const o=AC.createOscillator(), g=AC.createGain();
+    o.type='square'; o.frequency.value=f; g.gain.value=0.07;
+    o.connect(g); g.connect(AC.destination);
+    o.start(AC.currentTime+i*0.16); o.stop(AC.currentTime+i*0.16+0.11);
+  });
+}
+
+/* Footstep */
+let _lastStep=0;
+function footstep(now){
+  if(!AC||!sndOn) return;
+  if(now-_lastStep<0.36) return; _lastStep=now;
+  const n=Math.floor(AC.sampleRate*0.05), b=AC.createBuffer(1,n,AC.sampleRate), d=b.getChannelData(0);
+  for(let i=0;i<n;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/n,3);
+  const s=AC.createBufferSource(), g=AC.createGain();
+  s.buffer=b; g.gain.value=floor===0?0.04:0.09;
+  s.connect(g); g.connect(AC.destination); s.start();
+}
+
+// Mouse look — NO pointer lock needed
+document.addEventListener('mousemove',e=>{
+  if(!gameActive||missionOpen||chatOpen) return;
+  camYaw  -= e.movementX*0.003;
+  camPitch = Math.max(0.06, Math.min(0.62, camPitch-e.movementY*0.003));
+});
+document.getElementById('c').addEventListener('click',()=>{ if(gameActive) document.getElementById('c').requestPointerLock(); });
+document.addEventListener('pointerlockchange',()=>{ /* pointer lock optional */ });
+
+// ════════════════════════════════════════
+// MISSIONS
+// ════════════════════════════════════════
+const MISSIONS=[
+  { id:'colreg', zoneId:'radar', title:'📡 RADAR — COLLISION AVOIDANCE',
+    scene:'0200 hrs. Fog. Radar shows vessel on reciprocal course, 4nm ahead. CPA < 0.2nm in 12 minutes.',
+    q:'COLREGS Rule — what action do you take?',
+    choices:[
+      {t:'Rule 19 — alter course starboard, reduce speed, sound fog signal',lead:20,comp:15,anal:20,icon:'✅',grade:'EXCELLENT',fb:'Rule 19 (Restricted Visibility) applied perfectly. Ships pass port-to-port with 0.8nm clearance. "COLREGS mastered."'},
+      {t:'Sound fog signal, call Master and reduce speed immediately',team:20,comp:20,anal:10,icon:'✅',grade:'GOOD',fb:'Correct escalation. Master diverts vessel safely.'},
+      {t:'Continue course — other ship should see you and move',lead:-20,anal:-20,comp:-15,icon:'❌',grade:'WRONG',fb:'COLREG Rule 19 requires every vessel to act. "I thought they\'d move" appears in accident reports.'},
+      {t:'Increase speed to clear the area before they reach us',anal:-15,comp:-15,icon:'❌',grade:'WRONG',fb:'Increasing speed in fog violates Rule 19(b). More danger, less time to react.'}
+    ]
+  },
+  { id:'storm', zoneId:'bridge', title:'🌊 BRIDGE — CYCLONE WARNING',
+    scene:'0300 hrs. Cyclone Biparjoy is 180nm away, closing fast. Waves 6m. Captain has stepped out.',
+    q:'You are officer on watch. First action?',
+    choices:[
+      {t:'Alter course away from storm path using ECDIS immediately',lead:20,comp:15,anal:10,icon:'✅',grade:'EXCELLENT',fb:'Textbook seamanship. Captain returns to find ship already diverted. "Good thinking, cadet."'},
+      {t:'Reduce speed and wake the Captain right now',team:10,comp:20,icon:'✅',grade:'GOOD',fb:'Correct. Never hesitate to call the Master in an emergency.'},
+      {t:'Radio nearest port for weather and hold course for now',anal:10,comp:-10,icon:'⚠️',grade:'RISKY',fb:'Data-gathering good — but holding course costs 20 minutes. Storm intensifies.'},
+      {t:'Continue watch and log — it might pass',lead:-15,comp:-20,cour:-10,icon:'❌',grade:'WRONG',fb:'15-metre waves hit. Cargo shifts. 3 crew injured. Never ignore a developing storm.'}
+    ]
+  },
+  { id:'fire', zoneId:'engine', title:'🔥 ENGINE ROOM — FIRE',
+    scene:'Smoke alarm. Flames near fuel purifier. Chief Engineer 3 minutes away. Crew looking at you.',
+    q:'What do you do RIGHT NOW?',
+    choices:[
+      {t:'Activate CO2 fixed fire system and shut fuel supply valves',cour:20,comp:15,anal:10,icon:'✅',grade:'EXCELLENT',fb:'CO2 smothers fuel fire. Valves starve the flame. Out in 45 seconds.'},
+      {t:'Sound general alarm and evacuate to muster station',team:15,cour:10,lead:10,icon:'✅',grade:'GOOD',fb:'Life safety first. Chief arrives, activates CO2. All accounted for.'},
+      {t:'Use portable extinguisher while calling Chief Engineer',comp:5,cour:5,anal:-5,icon:'⚠️',grade:'RISKY',fb:'Portable extinguisher too small for a fuel fire. Fire spreads.'},
+      {t:'Observe and wait for Chief Engineer',lead:-20,cour:-20,comp:-15,icon:'❌',grade:'WRONG',fb:'3 minutes is an eternity in fire. Engine room lost. MAYDAY declared.'}
+    ]
+  },
+  { id:'cargo', zoneId:'cargo', title:'📦 CARGO — STABILITY CRISIS',
+    scene:'Container shifted 30cm. Ship listing 8 degrees port. Night watch, 0140 hrs.',
+    q:'Correct response to restore stability?',
+    choices:[
+      {t:'Ballast port tanks immediately and reduce speed',anal:20,lead:15,comp:10,icon:'✅',grade:'EXCELLENT',fb:'Ballasting compensates list. Speed reduction reduces wave impact. Cargo secured at dawn.'},
+      {t:'Wake Cargo Officer and Captain, report list and coordinates',team:20,comp:15,lead:5,icon:'✅',grade:'GOOD',fb:'Right call. Emergency team responds in 4 minutes. Controlled.'},
+      {t:'Continue sailing — log for morning report',comp:-15,anal:-10,lead:-5,icon:'❌',grade:'WRONG',fb:'8 degrees becomes 19 by 0600. IMO requires action above 5 degrees.'},
+      {t:'Radio nearby ships to stand by in case of capsize',cour:5,anal:-15,icon:'⚠️',grade:'RISKY',fb:'Premature distress broadcast triggers unnecessary SAR. Stabilise first.'}
+    ]
+  },
+  { id:'mob', zoneId:'muster', title:'🆘 MUSTER — MAN OVERBOARD',
+    scene:'OSCAR! Crew member overboard. 1730 hrs, 2m waves, good visibility. You are Deck Watch Officer.',
+    q:'Immediate MOB response sequence?',
+    choices:[
+      {t:'Throw life ring, MOB on GPS, Williamson Turn to port',cour:25,lead:20,comp:15,icon:'✅',grade:'PERFECT',fb:'Williamson Turn returns you to exact track. Recovery in 8 minutes. "That man is alive because of you."'},
+      {t:'3 long blasts, reduce speed, maintain visual on MOB',team:15,comp:10,cour:10,icon:'✅',grade:'GOOD',fb:'Sound signal alerts crew. Speed reduction aids recovery. Safe outcome.'},
+      {t:'Radio Coast Guard and maintain course to avoid collision',lead:-10,comp:-10,icon:'❌',grade:'WRONG',fb:'Continuing course is abandonment. Act first — Coast Guard second.'},
+      {t:'Lower rescue boat without marking GPS position',cour:10,anal:-15,icon:'⚠️',grade:'RISKY',fb:'No GPS fix wastes critical minutes. MOB drifts fast in 2m waves.'}
+    ]
+  }
+];
+
+// Zone sequence
+const ZONE_SEQ=['radar','bridge','engine','cargo','muster'];
+
+// ════════════════════════════════════════
+// NPC DATA
+// ════════════════════════════════════════
+const NPCS=[
+  {id:'captain',name:'Capt. Raghunathan',role:'Master — 28 Yrs',emoji:'👨‍✈️',color:'#ffd700',pos:{x:3,z:-12},floor:0,
+   greet:'Welcome aboard MV Horizon. 200 metres of responsibility. Every decision here has consequences.',
+   replies:['How to become Captain?','Hardest part of the job?','Tell me about STCW','About this ship'],
+   res:{captain:'Chief Mate first — 5 years. Class I MMD. Then command. 12–15 years total. Not a career you enter for money alone.',hard:'The loneliness. 90 days without touching land. Family moves on without you. That is the hardest part.',stcw:'Standards of Training, Certification and Watchkeeping — mandatory for every seafarer worldwide. Basic Safety, PSCRB, AFF, MFA.',ship:'Built 2019, South Korea. 199.8m LOA. 35,000 GT. 2,500 TEU capacity. Young, reliable, beautiful in heavy weather.',default:'The sea tests patience, courage, loneliness, and intelligence — often in the same watch.'}},
+  {id:'chief',name:'Chief Eng. Sharma',role:'Chief Engineer — ME Class I',emoji:'⚙️',color:'#ff6d00',pos:{x:-10,z:22},floor:0,
+   greet:'Engine room cadet! Not a place for careless hands. Every pipe and valve has a purpose. Learn them.',
+   replies:['What engine is this?','How hot does it get?','How to join as engineer?','What is MEO Class I?'],
+   res:{engine:'MAN B&W two-stroke diesel. 12,000 kW. Burns 40 tonnes HFO per day at service speed.',hot:'48–55°C at full power. 4-hour watches. We lose 2–3 kg water per watch. Hydration is survival.',join:'IMU B.Tech Marine Engineering — 4 years. Or sponsorship post Class 12 PCM. Start as 4th Engineer.',meo:'Four levels: Class IV → III → II → I (Chief Engineer). Each requires sea time plus MMD exam in Mumbai.',default:'Engines are honest — they tell you when unhappy. Learn to listen to vibrations and temperatures.'}},
+  {id:'officer',name:'2nd Officer Priya',role:'Navigation — Class II',emoji:'👩‍✈️',color:'#26c6da',pos:{x:6,z:-25},floor:0,
+   greet:'I grew up in Coimbatore. Nobody in my family had seen the ocean. Today I navigate vessels across three oceans.',
+   replies:['How did you join as a woman?','What is your watch like?','Do you miss home?','What exams did you clear?'],
+   res:{woman:'Only woman on my first ship in 2011. Competence has no gender. I earned respect. More women in maritime every year.',watch:'12 on, 12 off. No weekends. But alone on bridge at 0300 with stars everywhere — no feeling like it.',miss:'Every day. But 8 months on ship = 4 months fully home. More present than 9-to-5 workers.',exams:'IMU-CET for B.Sc Nautical Science. STCW training. Sea time. Competency exams at MMD for each rank.',default:'The Indian Ocean at sunrise from the bridge wing. That view alone is worth 15 years of hard work.'}},
+  {id:'bosun',name:'Bosun Krishnan',role:'Bosun — Deck Dept',emoji:'⚓',color:'#1db954',pos:{x:5,z:10},floor:0,
+   greet:'25 years at sea. Started as mess boy 1999. Today I run the deck crew of a Panamax. Every rope — my responsibility.',
+   replies:['How do you lash containers?','Most dangerous part?','How did you start?','Training needed?'],
+   res:{lash:'ISO twist locks, bridge fittings, lashing rods, turnbuckles. 4 lash points per box. Double-check in heavy weather.',dangerous:'Cargo ops in port. Heavy lift, cranes, high winds. Never take shortcuts. I have lost colleagues to shortcuts.',start:'Mess boy at 18. QMED exam. AB, senior AB, Bosun. 25 years showing up and learning.',training:'GP Rating — 6 months. STCW courses. Then sea time as AB. Fastest entry into the industry.',default:'The sea does not care about background, caste, or college. Only competence.'}},
+  {id:'cadet2',name:'Cadet Arjun',role:'Deck Cadet — 1st Voyage',emoji:'🧑‍🎓',color:'#ce93d8',pos:{x:11,z:27},floor:0,
+   greet:'Bro! Finally someone my age. First voyage — 3 months in, 6 to go. Harder than I imagined. But most alive I have felt.',
+   replies:['Is it what you expected?','Do you regret it?','What shocked you most?','Tips for joining?'],
+   res:{expected:'Thought cruise ship. This is cargo. 0400 watch in drizzle holding a sextant while officer ignores you. Then slowly you learn everything.',regret:'Not a second. Classmates in IT are already bored. I have crossed the Arabian Sea twice and fixed a real nav problem at 19.',shocked:'How small you feel in open ocean. No land in any direction. First time I cried. Then it became the best feeling ever.',tips:'Study hard for IMU-CET. Never skip STCW. Ask every officer everything — most love teaching.',default:'Learning more in 9 months than 4 years of college. This career is real.'}},
+  // Extra deck workers
+  {id:'cook',name:'Cook Deepak',role:'Ship\'s Cook',emoji:'👨‍🍳',color:'#4fc3f7',pos:{x:9,z:5},floor:0,
+   greet:'Three meals a day for 24 crew. Every day. The galley never stops and neither do I. You look hungry!',
+   replies:['What do you cook at sea?','How to join galley?'],
+   res:{'what':'Continental, South Indian, North Indian — everything. Crew morale depends on good food. Happy stomach, happy sailor.','join':'Hotel management or Maritime Cook certificate. Then sea service. Good cooks are always in demand.',default:'A happy crew starts with a good meal. I am the most important person on this ship!'}},
+  {id:'oiler',name:'Oiler Thomas',role:'Engine Oiler',emoji:'⛽',color:'#ff9800',pos:{x:-7,z:-30},floor:0,
+   greet:'Night watch. Just lubing the main bearings. She sings when properly oiled.',
+   replies:['What does an oiler do?','Is engine work dangerous?'],
+   res:{'oiler':'We maintain all lubrication systems. Every moving part needs oil. We keep it running smooth.','dangerous':'Rotating machinery, high-pressure steam, hot surfaces. Safety culture saves lives. Procedure every single time.',default:'I have 8 years at sea. Seen 18 countries. Not bad for a boy from a small village in Kerala.'}},
+  // Basement NPCs
+  {id:'eng4',name:'4th Eng. Muthu',role:'4th Engineer',emoji:'🔧',color:'#ff6d00',pos:{x:2,z:6},floor:-1,
+   greet:'Welcome to the belly of the ship! Down here is where the real magic happens. 24/7 the engine runs.',
+   replies:['What do you maintain?','How hot is it here?','How long are watches?'],
+   res:{'maintain':'Fuel pumps, lube oil separators, bilge pumps, compressors, generators — everything with a motor or pipe.',hot:'Easily 50°C near the main engine. 4-hour watches. Full PPE. You adapt.',watches:'4 on, 8 off. Midnight to 4 AM is the worst. But mastering a system — most satisfying feeling in engineering.',default:'People see the ship from outside and think it is beautiful. I see it from inside. Both are correct.'}},
+  {id:'elec',name:'ETO Fernandes',role:'Electro-Technical Officer',emoji:'⚡',color:'#ffeb3b',pos:{x:-9,z:-14},floor:-1,
+   greet:'Every light, computer, navigation system — my responsibility. Muthu keeps the heart; I keep the brain.',
+   replies:['What qualifications needed?','What do you earn?','Why Merchant Navy?'],
+   res:{'qual':'3-year Electrical diploma + ETO course (6 months) + sea service. Most in-demand position at sea right now.','earn':'Starting ETO: 1.8–2.5L/month. Senior ETO on large vessels: 4–6L. Tax-free.',why:'Applied to ONGC and Tata Power. Maritime salary was double with half the stress. 18 countries in 3 years.',default:'Electricity has no bias. You respect it or regret it. Same rule applies to this career.'}},
+];
+
+// ════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════
+let gameActive=false, chatOpen=false, missionOpen=false, currentNpc=null;
+let floor=0; // 0=deck, -1=basement
+let zoneIdx=0; // current active zone index
+let triggered=new Set(), doneCount=0;
+let traits={lead:10,comp:10,team:10,anal:10,cour:10};
+let camYaw=0, camPitch=0.28, camDist=7;
+let playerRole='cadet';
+const moveState={f:false,b:false,l:false,r:false};
+let isWalk=false;
+const DECK_Y=2.55, BASE_Y=-5.5;
+
+// ════════════════════════════════════════
+// THREE.JS
+// ════════════════════════════════════════
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x020810);
+scene.fog=new THREE.FogExp2(0x030c1a,0.012);
+
+const renderer=new THREE.WebGLRenderer({canvas:document.getElementById('c'),antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setSize(innerWidth,innerHeight);
+renderer.shadowMap.enabled=true;
+renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=0.9;
+
+const cam=new THREE.PerspectiveCamera(65,innerWidth/innerHeight,0.1,300);
+cam.position.set(0,8,14);
+
+// Lighting
+scene.add(new THREE.AmbientLight(0x0a1a30,2.5));
+const moon=new THREE.DirectionalLight(0x4060a0,1.2);
+moon.position.set(-40,80,-30); moon.castShadow=true;
+moon.shadow.mapSize.set(2048,2048);
+moon.shadow.camera.left=-80; moon.shadow.camera.right=80;
+moon.shadow.camera.top=80; moon.shadow.camera.bottom=-80;
+scene.add(moon);
+[[-12,-18,0xffcc44],[12,-18,0xffcc44],[-12,18,0xffcc44],[12,18,0xffcc44],[0,-38,0x2255aa],[0,38,0xff3322]].forEach(([x,z,c])=>{
+  const p=new THREE.PointLight(c,2,22); p.position.set(x,6,z); scene.add(p);
+});
+const bridgeGlow=new THREE.PointLight(0x4488ff,3,20); bridgeGlow.position.set(0,14,-10); scene.add(bridgeGlow);
+
+// ── helpers ──
+function box(w,h,d,col,x,y,z){
+  const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),new THREE.MeshStandardMaterial({color:col,roughness:.75,metalness:.3}));
+  m.position.set(x,y,z); m.castShadow=m.receiveShadow=true; scene.add(m); return m;
+}
+function cyl(rt,rb,h,seg,col,x,y,z){
+  const m=new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,seg),new THREE.MeshStandardMaterial({color:col,roughness:.7,metalness:.25}));
+  m.position.set(x,y,z); m.castShadow=true; scene.add(m); return m;
+}
+
+// ── Ocean ──
+const oceanGeo=new THREE.PlaneGeometry(600,600,120,120);
+const ocean2=new THREE.Mesh(oceanGeo,new THREE.MeshStandardMaterial({color:0x061428,roughness:.08,metalness:.95}));
+ocean2.rotation.x=-Math.PI/2; ocean2.position.y=-2; ocean2.receiveShadow=true; scene.add(ocean2);
+// Stars
+const sv=[]; for(let i=0;i<3000;i++){const th=Math.random()*6.28,ph=Math.random()*1.57,r=220+Math.random()*80;sv.push(r*Math.sin(ph)*Math.cos(th),r*Math.cos(ph)+10,r*Math.sin(ph)*Math.sin(th));}
+const starGeo=new THREE.BufferGeometry(); starGeo.setAttribute('position',new THREE.Float32BufferAttribute(sv,3));
+scene.add(new THREE.Points(starGeo,new THREE.PointsMaterial({color:0xffffff,size:.35,transparent:true,opacity:.9})));
+const moonSphere=new THREE.Mesh(new THREE.SphereGeometry(5,16,16),new THREE.MeshBasicMaterial({color:0xfffce8}));
+moonSphere.position.set(-80,90,-150); scene.add(moonSphere);
+
+// ════════════════════════════════════════
+// SHIP HULL
+// ════════════════════════════════════════
+box(28,5,82,0x182838,0,0,0); box(26,.5,80,0x1e2e40,0,2.55,0);
+box(1.8,5,82,0x101e2c,-14.9,-.5,0); box(1.8,5,82,0x101e2c,14.9,-.5,0);
+box(28,.4,82,0xcc2020,0,-1.6,0); box(28,.3,82,0x000000,0,-1.9,0);
+const bowGeo=new THREE.CylinderGeometry(0,14,10,4,1,false,[Math.PI/4]);
+const bowM=new THREE.Mesh(bowGeo,new THREE.MeshStandardMaterial({color:0x182838,roughness:.8}));
+bowM.position.set(0,0,-46); bowM.rotation.set(0,Math.PI/4,0); scene.add(bowM);
+box(28,5,8,0x141e28,0,0,44); box(26,.5,8,0x1e2e40,0,2.55,44);
+// Deck details
+box(2,1.5,2,0x404040,-11,2.8,-41); box(2,1.5,2,0x404040,11,2.8,-41);
+for(let bx of[-8,-3,3,8]){cyl(.35,.35,.8,8,0x888888,bx,3.2,-42); cyl(.35,.35,.8,8,0x888888,bx,3.2,42);}
+for(let r=0;r<4;r++){box(8,.4,6,r%2?0x1d2d3a:0x223344,-4,2.8,-35+r*10); box(8,.4,6,r%2?0x1d2d3a:0x223344,4,2.8,-35+r*10);}
+// Superstructure
+box(18,14,16,0x1a2e44,0,9.8,-10); box(16,.4,14,0x223348,0,16.9,-10);
+box(12,4,10,0x182840,0,19.8,-10); box(10,.4,8,0x1e2e44,0,22,-10);
+for(let fl=0;fl<3;fl++) for(let i=-6;i<=6;i+=3){
+  const w=new THREE.Mesh(new THREE.BoxGeometry(1.8,1.4,.1),new THREE.MeshStandardMaterial({color:0x3366aa,emissive:0x1a3366,emissiveIntensity:.7,roughness:.1,metalness:.9}));
+  w.position.set(i,5+fl*3.2,-18.1); scene.add(w);
+}
+for(let i=-5;i<=5;i+=2){
+  const wm=new THREE.MeshStandardMaterial({color:0x4488cc,emissive:0x224488,emissiveIntensity:.8,roughness:.05,metalness:.95});
+  const w=new THREE.Mesh(new THREE.BoxGeometry(1.6,1.8,.1),wm); w.position.set(i,20.5,-15.1); scene.add(w);
+  const s=w.clone(); s.position.set(-9.1,20.5,-10); s.rotation.y=Math.PI/2; scene.add(s);
+  const s2=w.clone(); s2.position.set(9.1,20.5,-10); s2.rotation.y=Math.PI/2; scene.add(s2);
+}
+box(5,.3,3,0x1a2a3a,-11.5,21.8,-10); box(5,.3,3,0x1a2a3a,11.5,21.8,-10);
+// Funnel & smoke
+cyl(2.2,2.6,12,12,0x1a1a1a,0,27,-8); cyl(2,2,1.2,12,0xcc2200,0,33.5,-8); cyl(1.8,1.8,.5,12,0x000000,0,34.2,-8);
+const smokePs=[]; for(let i=0;i<20;i++){const s=new THREE.Mesh(new THREE.SphereGeometry(.4+Math.random()*.4,6,6),new THREE.MeshBasicMaterial({color:0x333333,transparent:true,opacity:Math.random()*.3+.1}));s.position.set((Math.random()-.5)*2,34+Math.random()*8,-8+(Math.random()-.5)*2);s.userData={vy:.03+Math.random()*.04,vx:(Math.random()-.5)*.01};scene.add(s);smokePs.push(s);}
+// Crane
+box(1.8,16,1.8,0xcc8800,-9,12,12); box(14,.8,1.2,0xbb7700,-2,19.5,12);
+const cMat2=new THREE.LineBasicMaterial({color:0xcccccc});
+scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(3,19.5,12),new THREE.Vector3(3,8.5,17)]),cMat2));
+cyl(.3,.3,.5,8,0x888888,3,8.3,17);
+box(1.8,14,1.8,0xcc8800,9,11,22); box(12,.8,1.2,0xbb7700,3,18,22);
+// Containers
+const CC=[0xcc2020,0x1a7a3a,0x1a3a9a,0xbb5500,0x6a1a9a,0x2a7a7a,0x888820,0xaa3355]; let ci=0;
+for(let r=0;r<4;r++) for(let c=0;c<3;c++) for(let s=0;s<3;s++){box(5.8,2.6,2.4,CC[ci%CC.length],-8.5+c*5.8,3.8+s*2.6,-28+r*10);ci++;}
+for(let r=0;r<3;r++) for(let s=0;s<2;s++){box(5.8,2.6,2.4,CC[ci%CC.length],7,3.8+s*2.6,-20+r*10);ci++;}
+// Railings
+function rail(x1,z1,x2,z2,y=3.8){
+  const len=Math.sqrt((x2-x1)**2+(z2-z1)**2), mx=(x1+x2)/2, mz=(z1+z2)/2;
+  const mat=new THREE.MeshStandardMaterial({color:0xdddddd,roughness:.5,metalness:.4});
+  const r=new THREE.Mesh(new THREE.BoxGeometry(.09,1.3,len),mat);
+  r.position.set(mx,y,mz); r.rotation.y=Math.atan2(x2-x1,z2-z1); scene.add(r);
+  const n=Math.floor(len/3);
+  for(let i=0;i<=n;i++){const t=i/n; const p=new THREE.Mesh(new THREE.BoxGeometry(.09,1.3,.09),mat); p.position.set(x1+(x2-x1)*t,y,z1+(z2-z1)*t); scene.add(p);}
+}
+rail(-13.5,40,-13.5,-44); rail(13.5,40,13.5,-44); rail(-13.5,40,13.5,40); rail(-13.5,-44,13.5,-44);
+// Radar
+box(.5,8,.5,0x888888,0,23,-10);
+const radarScan=new THREE.Mesh(new THREE.BoxGeometry(4,.2,.3),new THREE.MeshStandardMaterial({color:0x999999,metalness:.8}));
+radarScan.position.set(0,28,-10); scene.add(radarScan);
+const mastRed=new THREE.PointLight(0xff2200,2,8); mastRed.position.set(0,32,-10); scene.add(mastRed);
+// Life rings
+for(let i=0;i<4;i++){const lr=new THREE.Mesh(new THREE.TorusGeometry(.55,.18,8,16),new THREE.MeshStandardMaterial({color:i%2?0xffffff:0xff4400,roughness:.4}));lr.position.set(i<2?-13.2:13.2,4.5,i%2?10:-20);lr.rotation.y=Math.PI/2;scene.add(lr);}
+// Lifeboat
+box(6,2,2.5,0xff8c00,10,5.5,-25); box(5.5,.5,2.2,0xff7000,10,4.3,-25);
+
+// ════════════════════════════════════════
+// STAIRS (port side midship)
+// ════════════════════════════════════════
+// Main deck stair structure
+for(let s=0;s<6;s++){
+  const step=new THREE.Mesh(new THREE.BoxGeometry(2.5,.25,.5),new THREE.MeshStandardMaterial({color:0x3a4a5a,roughness:.8,metalness:.4}));
+  step.position.set(-11,2.55-s*.42+s*.08,s*.5-1.5); step.castShadow=true; scene.add(step);
+}
+for(let side of[-1,1]){
+  const hr=new THREE.Mesh(new THREE.BoxGeometry(.06,1.4,3.2),new THREE.MeshStandardMaterial({color:0xaaaaaa,metalness:.7}));
+  hr.position.set(-11+side*1.1,2.6,-.2); scene.add(hr);
+}
+const stairGlow=new THREE.PointLight(0xce93d8,3,5); stairGlow.position.set(-11,3.5,0); scene.add(stairGlow);
+box(2.6,.2,.5,0x2a3a4a,-11,2.7,-2);
+
+// ════════════════════════════════════════
+// BASEMENT
+// ════════════════════════════════════════
+box(26,.4,80,0x0d1520,0,BASE_Y,0);
+box(1.5,5,80,0x0a1220,-13,BASE_Y+2.5,0); box(1.5,5,80,0x0a1220,13,BASE_Y+2.5,0);
+box(26,.3,80,0x182838,0,BASE_Y+5,0);
+// Main engine block
+box(6,4,10,0x1a3040,0,BASE_Y+2.5,5); box(5,.5,9,0x222222,0,BASE_Y+4.5,5);
+const engGlow=new THREE.PointLight(0xff6600,4,14); engGlow.position.set(0,BASE_Y+3,5); scene.add(engGlow);
+// Generators
+box(3,2,3,0x223344,-8,BASE_Y+1.5,-15); box(3,2,3,0x223344,8,BASE_Y+1.5,-15);
+const g1l=new THREE.PointLight(0xffaa00,2,8); g1l.position.set(-8,BASE_Y+3,-15); scene.add(g1l);
+const g2l=new THREE.PointLight(0xffaa00,2,8); g2l.position.set(8,BASE_Y+3,-15); scene.add(g2l);
+// Pipes
+box(.2,.2,62,0x666699,-10,BASE_Y+4.2,0); box(.2,.2,62,0x886644,10,BASE_Y+4.2,0); box(.2,.2,62,0x444466,0,BASE_Y+4.6,0);
+// Bilge pumps
+for(let z of[-20,0,20]){cyl(.5,.6,1.2,10,0x334455,-5,BASE_Y+1,z); cyl(.5,.6,1.2,10,0x334455,5,BASE_Y+1,z);}
+// Fuel tanks
+for(let x of[-10,10]) for(let z of[-20,20]) box(4,3,5,0x223322,x,BASE_Y+1.5,z);
+// Base lights
+for(let [x,z,c] of[[0,-25,0xffaa44],[0,25,0xffaa44],[-8,0,0xff8822],[8,0,0xff8822],[0,0,0xff9933]]){
+  const pl=new THREE.PointLight(c,3,18); pl.position.set(x,BASE_Y+4.5,z); scene.add(pl);
+}
+// Control panels
+for(let z of[-25,-10,10,25]){
+  box(.5,2,2,0x1a2a3a,-12,BASE_Y+2,z);
+  const pl=new THREE.PointLight(0x00ff88,1,4); pl.position.set(-11.5,BASE_Y+3,z); scene.add(pl);
+}
+// Basement ladder rungs
+for(let r=0;r<12;r++) box(1.8,.1,.1,0x888888,-11,BASE_Y+.4+r*.42,-1.8);
+box(.08,5,.08,0x777777,-12,BASE_Y+2.5,-1.8); box(.08,5,.08,0x777777,-10,BASE_Y+2.5,-1.8);
+
+// ════════════════════════════════════════
+// ZONES
+// ════════════════════════════════════════
+const ZONES=[
+  {id:'radar', label:'RADAR ROOM', x:6,z:-25, col:0x003344, ring:0x26c6da},
+  {id:'bridge',label:'THE BRIDGE', x:0,z:-10, col:0x004488, ring:0x4fc3f7},
+  {id:'engine',label:'ENGINE ROOM',x:-10,z:20,col:0x440000, ring:0xff6d00},
+  {id:'cargo', label:'CARGO DECK', x:4,z:8,  col:0x004400, ring:0x1db954},
+  {id:'muster',label:'MUSTER STN', x:10,z:25, col:0x440022, ring:0xef5350},
+];
+const zoneObjs=[];
+ZONES.forEach((z,idx)=>{
+  const grp=new THREE.Group();
+  const ringMat=new THREE.MeshBasicMaterial({color:z.ring,side:THREE.DoubleSide,transparent:true,opacity:.5});
+  const fillMat=new THREE.MeshBasicMaterial({color:z.col,side:THREE.DoubleSide,transparent:true,opacity:.35});
+  const ring=new THREE.Mesh(new THREE.RingGeometry(2.8,3.3,32),ringMat);
+  ring.rotation.x=-Math.PI/2; ring.position.y=2.7; grp.add(ring);
+  const fill=new THREE.Mesh(new THREE.CircleGeometry(2.8,32),fillMat);
+  fill.rotation.x=-Math.PI/2; fill.position.y=2.65; grp.add(fill);
+  grp.position.set(z.x,0,z.z); scene.add(grp);
+  zoneObjs.push({...z,idx,grp,ringMat,fillMat});
+});
+// Basement marker circles
+for(const n of NPCS.filter(n=>n.floor===-1)){
+  const g=new THREE.Group();
+  const rm=new THREE.MeshBasicMaterial({color:0xce93d8,side:THREE.DoubleSide,transparent:true,opacity:.4});
+  const r=new THREE.Mesh(new THREE.RingGeometry(1.8,2.2,24),rm);
+  r.rotation.x=-Math.PI/2; r.position.y=BASE_Y+.6; g.add(r);
+  g.position.set(n.pos.x,0,n.pos.z); scene.add(g);
+}
+
+// ════════════════════════════════════════
+// HUMANOID BUILDER
+// ════════════════════════════════════════
+function buildH(opts={}){
+  const{skinColor=0xd4956a,uniformColor=0x1a3a5c,hairColor=0x1a0a00,helmetColor=null,hatColor=null,scale=1}=opts;
+  const root=new THREE.Group(); root.scale.setScalar(scale);
+  const sk=new THREE.MeshStandardMaterial({color:skinColor,roughness:.7});
+  const un=new THREE.MeshStandardMaterial({color:uniformColor,roughness:.65,metalness:.05});
+  const dk=new THREE.MeshStandardMaterial({color:0x0a0a0a,roughness:.9});
+  const bg=new THREE.Group(); root.add(bg);
+  // Torso
+  const torso=new THREE.Mesh(new THREE.BoxGeometry(.52,.62,.28),un); torso.position.y=.9; torso.castShadow=true; bg.add(torso);
+  const col=new THREE.Mesh(new THREE.BoxGeometry(.3,.1,.29),new THREE.MeshStandardMaterial({color:0xeeeeee,roughness:.6})); col.position.set(0,1.19,0); bg.add(col);
+  for(let s of[-1,1]){const ep=new THREE.Mesh(new THREE.BoxGeometry(.12,.05,.28),new THREE.MeshStandardMaterial({color:0xffd700,roughness:.4,metalness:.6}));ep.position.set(s*.33,1.19,0);bg.add(ep);}
+  const hips=new THREE.Mesh(new THREE.BoxGeometry(.48,.22,.25),un); hips.position.y=.56; hips.castShadow=true; bg.add(hips);
+  // Head
+  const hg=new THREE.Group(); hg.position.y=1.42; bg.add(hg);
+  const head=new THREE.Mesh(new THREE.BoxGeometry(.32,.34,.3),sk); head.castShadow=true; hg.add(head);
+  if(helmetColor){
+    const hm=new THREE.Mesh(new THREE.BoxGeometry(.36,.2,.34),new THREE.MeshStandardMaterial({color:helmetColor,roughness:.4,metalness:.3}));hm.position.y=.17;hg.add(hm);
+    const bm=new THREE.Mesh(new THREE.BoxGeometry(.46,.05,.44),new THREE.MeshStandardMaterial({color:helmetColor,roughness:.4,metalness:.3}));bm.position.y=.09;hg.add(bm);
+  }else if(hatColor){
+    const ct=new THREE.Mesh(new THREE.CylinderGeometry(.2,.2,.08,12),new THREE.MeshStandardMaterial({color:hatColor,roughness:.5}));ct.position.y=.24;hg.add(ct);
+    const cb=new THREE.Mesh(new THREE.CylinderGeometry(.28,.28,.04,12),new THREE.MeshStandardMaterial({color:0x111111,roughness:.5}));cb.position.y=.18;hg.add(cb);
+    const bd=new THREE.Mesh(new THREE.BoxGeometry(.12,.06,.02),new THREE.MeshStandardMaterial({color:0xffd700,roughness:.3,metalness:.8}));bd.position.set(0,.22,.2);hg.add(bd);
+  }else{
+    const hr=new THREE.Mesh(new THREE.BoxGeometry(.34,.14,.32),new THREE.MeshStandardMaterial({color:hairColor,roughness:.9}));hr.position.y=.2;hg.add(hr);
+  }
+  for(let s of[-.08,.08]){const e=new THREE.Mesh(new THREE.BoxGeometry(.06,.05,.02),new THREE.MeshStandardMaterial({color:0x111111}));e.position.set(s,.03,.153);hg.add(e);}
+  const mo=new THREE.Mesh(new THREE.BoxGeometry(.1,.03,.02),new THREE.MeshStandardMaterial({color:0x8b4040}));mo.position.set(0,-.08,.153);hg.add(mo);
+  const nk=new THREE.Mesh(new THREE.CylinderGeometry(.09,.11,.14,8),sk);nk.position.y=1.27;nk.castShadow=true;bg.add(nk);
+  // Arms
+  const arms=[];
+  for(let s of[-1,1]){
+    const ap=new THREE.Group(); ap.position.set(s*.36,1.1,0);
+    const ua=new THREE.Mesh(new THREE.BoxGeometry(.16,.34,.16),un); ua.position.y=-.17; ap.add(ua); bg.add(ap);
+    const fp=new THREE.Group(); fp.position.y=-.34;
+    const fa=new THREE.Mesh(new THREE.BoxGeometry(.14,.3,.14),un); fa.position.y=-.15; fp.add(fa);
+    const ha=new THREE.Mesh(new THREE.BoxGeometry(.13,.16,.08),sk); ha.position.y=-.38; fp.add(ha);
+    ap.add(fp); ua.castShadow=fa.castShadow=ha.castShadow=true;
+    arms.push({p:ap,fp,s});
+  }
+  // Legs
+  const legs=[];
+  for(let s of[-1,1]){
+    const lp=new THREE.Group(); lp.position.set(s*.14,.46,0);
+    const ul=new THREE.Mesh(new THREE.BoxGeometry(.2,.38,.2),un); ul.position.y=-.19; lp.add(ul);
+    const llp=new THREE.Group(); llp.position.y=-.38;
+    const ll=new THREE.Mesh(new THREE.BoxGeometry(.17,.34,.17),un); ll.position.y=-.17; llp.add(ll);
+    const fo=new THREE.Mesh(new THREE.BoxGeometry(.19,.1,.28),dk); fo.position.set(0,-.39,.06); llp.add(fo);
+    lp.add(llp); bg.add(lp); ul.castShadow=ll.castShadow=fo.castShadow=true;
+    legs.push({p:lp,lp2:llp,s});
+  }
+  root._a=arms; root._l=legs; root._bg=bg; root._hg=hg;
+  return root;
+}
+function animH(h,t,walk,spd=1){
+  if(!h._l) return;
+  const sw=walk?Math.sin(t*8*spd):0, sm=walk?1:0;
+  h._l[0].p.rotation.x=sw*.55*sm; h._l[1].p.rotation.x=-sw*.55*sm;
+  h._l[0].lp2.rotation.x=Math.max(0,-sw)*.5*sm; h._l[1].lp2.rotation.x=Math.max(0,sw)*.5*sm;
+  h._a[0].p.rotation.x=-sw*.45*sm; h._a[1].p.rotation.x=sw*.45*sm;
+  h._a[0].fp.rotation.x=Math.abs(sw)*.2*sm-.1; h._a[1].fp.rotation.x=Math.abs(sw)*.2*sm-.1;
+  h._bg.position.y=walk?Math.abs(Math.sin(t*8*spd))*.04:0;
+}
+
+// ════════════════════════════════════════
+// NPC MESH SPAWN
+// ════════════════════════════════════════
+const NAPP={
+  captain:{skinColor:0xc8a070,uniformColor:0x0a0a0a,hatColor:0x0a0a0a},
+  chief:{skinColor:0xcc8855,uniformColor:0x441100,helmetColor:0xffa500,scale:.97},
+  officer:{skinColor:0xd4956a,uniformColor:0x1a2a4a,hatColor:0x1a2a4a,scale:.93},
+  bosun:{skinColor:0xa06030,uniformColor:0x223322,helmetColor:0xffdd00,scale:1.02},
+  cadet2:{skinColor:0xd4a070,uniformColor:0x1a3a5c,scale:.95},
+  cook:{skinColor:0xe0a070,uniformColor:0xffffff,hairColor:0x1a0a00},
+  oiler:{skinColor:0xcc8060,uniformColor:0x3a2010,helmetColor:0xffbb00,scale:.98},
+  eng4:{skinColor:0xcc8060,uniformColor:0x3a2010,helmetColor:0xff8800,scale:.96},
+  elec:{skinColor:0xd4b070,uniformColor:0x1a1a4a,hatColor:0x1a1a4a,scale:.94},
+};
+const npcMeshes=[];
+NPCS.forEach((n,i)=>{
+  const yn=n.floor===0?DECK_Y:BASE_Y+.55;
+  const h=buildH(NAPP[n.id]||{});
+  h.position.set(n.pos.x,yn,n.pos.z);
+  const col=parseInt(n.color.replace('#',''),16);
+  const pl=new THREE.PointLight(col,2.5,6); pl.position.set(0,2.5,0); h.add(pl);
+  scene.add(h);
+  npcMeshes.push({h,n,ox:n.pos.x,oz:n.pos.z,oy:yn,ph:Math.random()*Math.PI*2,floor:n.floor||0});
+});
+
+// ════════════════════════════════════════
+// PLAYER
+// ════════════════════════════════════════
+const RAPP={cadet:{skinColor:0xd4956a,uniformColor:0x1a3a6a,hatColor:0x1a3a6a},engineer:{skinColor:0xcc8060,uniformColor:0x3a2010,helmetColor:0xffbb00},mess:{skinColor:0xe0a070,uniformColor:0xffffff,hairColor:0x1a0a00}};
+let pH=buildH(RAPP.cadet); pH.position.set(0,DECK_Y,18);
+const pl2=new THREE.PointLight(0x4fc3f7,1.5,7); pl2.position.set(0,3,0); pH.add(pl2); scene.add(pH);
+let pGrp=pH;
+
+// ════════════════════════════════════════
+// INPUT
+// ════════════════════════════════════════
+document.addEventListener('keydown',e=>{
+  if(!gameActive||missionOpen) return;
+  const k=e.key.toLowerCase();
+  if(k==='w'||k==='arrowup')    moveState.f=true;
+  if(k==='s'||k==='arrowdown')  moveState.b=true;
+  if(k==='a'||k==='arrowleft')  moveState.l=true;
+  if(k==='d'||k==='arrowright') moveState.r=true;
+  if(k==='e'){ const npc=nearNpc(); if(npc) openChat(npc); }
+  if(k==='f') tryStairs();
+  if(['arrowup','arrowdown','arrowleft','arrowright',' '].includes(k)) e.preventDefault();
+});
+document.addEventListener('keyup',e=>{
+  const k=e.key.toLowerCase();
+  if(k==='w'||k==='arrowup')    moveState.f=false;
+  if(k==='s'||k==='arrowdown')  moveState.b=false;
+  if(k==='a'||k==='arrowleft')  moveState.l=false;
+  if(k==='d'||k==='arrowright') moveState.r=false;
+});
+document.addEventListener('wheel',e=>{ camDist=Math.max(4,Math.min(15,camDist+e.deltaY*.01)); });
+
+// ════════════════════════════════════════
+// STAIRS
+// ════════════════════════════════════════
+function nearStairs(){
+  const dx=pGrp.position.x-(-11), dz=pGrp.position.z-0;
+  return Math.sqrt(dx*dx+dz*dz)<2.8;
+}
+function tryStairs(){
+  if(!nearStairs()) return;
+  if(floor===0){
+    floor=-1; pGrp.position.y=BASE_Y+.55;
+    document.getElementById('floor-tag').textContent='ENGINE BASEMENT';
+    document.getElementById('mm-label').textContent='BASEMENT -1';
+    toast('⬇ Descending to Engine Basement…','#ce93d8');
+    if(_engGain) _engGain.gain.linearRampToValueAtTime(.15,AC?.currentTime+1||0);
+  } else {
+    floor=0; pGrp.position.x=-11; pGrp.position.z=1; pGrp.position.y=DECK_Y;
+    document.getElementById('floor-tag').textContent='MAIN DECK';
+    document.getElementById('mm-label').textContent='DECK 0';
+    toast('⬆ Back on Main Deck','#4fc3f7');
+    if(_engGain) _engGain.gain.linearRampToValueAtTime(0,AC?.currentTime+1||0);
+  }
+  npcMeshes.forEach(n=>{ n.h.visible=(n.floor===floor); });
+}
+
+// ════════════════════════════════════════
+// GAME LOGIC
+// ════════════════════════════════════════
+function nearNpc(){
+  const px=pGrp.position.x, pz=pGrp.position.z;
+  for(const n of npcMeshes){
+    if(n.floor!==floor) continue;
+    const dx=px-n.h.position.x, dz=pz-n.h.position.z;
+    if(Math.sqrt(dx*dx+dz*dz)<4.5) return n.n;
+  }
+  return null;
+}
+function getActiveZone(){
+  if(floor!==0) return null;
+  if(zoneIdx>=ZONES.length) return null;
+  const z=ZONES[zoneIdx];
+  const dx=pGrp.position.x-z.x, dz=pGrp.position.z-z.z;
+  return Math.sqrt(dx*dx+dz*dz)<4 ? z : null;
+}
+
+function updateArrow(){
+  if(zoneIdx>=ZONES.length||floor!==0){ document.getElementById('arrow-hud').style.display='none'; return; }
+  const nz=ZONES[zoneIdx];
+  const dx=nz.x-pGrp.position.x, dz=nz.z-pGrp.position.z, dist=Math.sqrt(dx*dx+dz*dz);
+  if(dist<5){ document.getElementById('arrow-hud').style.display='none'; return; }
+  const ang=Math.atan2(dx,dz)-camYaw;
+  const norm=((ang+Math.PI*3)%(Math.PI*2))-Math.PI;
+  let g='↑';
+  if(norm<-Math.PI*.75||norm>Math.PI*.75) g='↓';
+  else if(norm<-Math.PI*.25) g='←';
+  else if(norm>Math.PI*.25) g='→';
+  document.getElementById('arrow-glyph').textContent=g;
+  document.getElementById('arrow-label').textContent=`${nz.label}  ${Math.round(dist)}m`;
+  document.getElementById('arrow-hud').style.display='block';
+  document.getElementById('next-label').textContent='NEXT: '+nz.label;
+}
+
+function checkMission(){
+  const z=getActiveZone(); if(!z) return;
+  if(triggered.has(z.id)) return;
+  const m=MISSIONS.find(m=>m.zoneId===z.id);
+  if(m) fireMission(m,z);
+}
+
+function fireMission(m,z){
+  triggered.add(z.id); missionOpen=true;
+  if(m.id==='storm'){ showRainFX(); startRain(); }
+  beep();
+  document.getElementById('mission-zone').textContent='📍 '+z.label;
+  document.getElementById('mission-title').textContent=m.title;
+  document.getElementById('mission-scene').textContent=m.scene;
+  document.getElementById('mission-q').textContent='❓ '+m.q;
+  const grid=document.getElementById('choices-grid'); grid.innerHTML='';
+  ['A','B','C','D'].forEach((k,i)=>{
+    if(!m.choices[i]) return;
+    const btn=document.createElement('button'); btn.className='choice'; btn.setAttribute('data-k',k);
+    btn.textContent=k+') '+m.choices[i].t;
+    btn.onclick=()=>resolve(m.choices[i],m.choices,btn);
+    grid.appendChild(btn);
+  });
+  document.getElementById('mission-overlay').style.display='flex';
+  toast('⚠️ EMERGENCY — '+z.label,'#ff9800');
+}
+
+function resolve(ch,all,btn){
+  all.forEach((c,i)=>{ const b=document.querySelectorAll('.choice')[i]; if(b) b.className='choice '+(c===ch?(c.icon==='✅'?'ok':'bad'):''); });
+  document.querySelectorAll('.choice').forEach(b=>b.onclick=null);
+  setTimeout(()=>{
+    document.getElementById('mission-overlay').style.display='none';
+    hideRainFX(); stopRain();
+    ['lead','comp','team','anal','cour'].forEach(k=>{ if(ch[k]) traits[k]=Math.max(0,Math.min(100,traits[k]+ch[k])); });
+    updateBars();
+    doneCount++;
+    document.getElementById('mission-count').textContent=doneCount+' / 5';
+    showResult(ch);
+    missionOpen=false;
+    zoneIdx++;
+    refreshZones();
+    if(zoneIdx<ZONES.length) flashZone(ZONES[zoneIdx].label);
+  },1200);
+}
+
+function refreshZones(){
+  zoneObjs.forEach((z,i)=>{
+    if(i<zoneIdx){ z.ringMat.color.setHex(0x1db954); z.ringMat.opacity=.2; z.fillMat.opacity=.08; }
+    else if(i===zoneIdx){ z.ringMat.color.setHex(z.ring); z.ringMat.opacity=.5; z.fillMat.opacity=.35; }
+    else{ z.ringMat.color.setHex(0x333333); z.ringMat.opacity=.12; z.fillMat.opacity=.04; }
+  });
+}
+
+function flashZone(label){
+  document.getElementById('zone-flash-sub').textContent=label+' UNLOCKED!';
+  const el=document.getElementById('zone-flash'); el.style.display='block';
+  setTimeout(()=>el.style.display='none',2200);
+}
+
+function showResult(ch){
+  const ok=ch.icon==='✅';
+  document.getElementById('result-icon').textContent=ch.icon;
+  document.getElementById('result-title').textContent=ch.grade;
+  document.getElementById('result-title').style.color=ok?'#1db954':'#ef5350';
+  document.getElementById('result-text').textContent=ch.fb;
+  const tb=document.getElementById('result-badges'); tb.innerHTML='';
+  const TM={lead:['Leadership','#4fc3f7'],comp:['Composure','#1db954'],team:['Teamwork','#ff9800'],anal:['Analytical','#ce93d8'],cour:['Courage','#ef5350']};
+  Object.keys(TM).forEach(k=>{ if(ch[k]){ const[l,c]=TM[k]; const b=document.createElement('span'); b.className='badge'; b.style.cssText=`background:${c}22;border:1px solid ${c};color:${c}`; b.textContent=(ch[k]>0?'+':'')+ch[k]+' '+l; tb.appendChild(b); } });
+  document.getElementById('result-pop').style.display='block';
+  if(doneCount>=5) setTimeout(()=>{ document.getElementById('result-pop').style.display='none'; showReport(); },3200);
+}
+function closeResult(){ document.getElementById('result-pop').style.display='none'; if(doneCount>=5) showReport(); }
+
+// ════════════════════════════════════════
+// CHAT
+// ════════════════════════════════════════
+function openChat(npc){
+  if(!AC) initAC();
+  currentNpc=npc; chatOpen=true;
+  document.getElementById('chat-overlay').style.display='flex';
+  document.getElementById('chat-av').textContent=npc.emoji;
+  document.getElementById('chat-av').style.background=npc.color+'33';
+  document.getElementById('chat-npc-name').textContent=npc.name;
+  document.getElementById('chat-npc-role').textContent=npc.role;
+  const msgs=document.getElementById('chat-msgs'); msgs.innerHTML='';
+  addMsg(npc.greet,'npc'); showQR(npc.replies);
+}
+function closeChat(){ document.getElementById('chat-overlay').style.display='none'; currentNpc=null; chatOpen=false; }
+function addMsg(text,who){ const d=document.createElement('div'); d.className='cmsg '+who; d.textContent=text; const m=document.getElementById('chat-msgs'); m.appendChild(d); m.scrollTop=m.scrollHeight; }
+function showQR(replies){ const q=document.getElementById('qr'); q.innerHTML=''; (replies||[]).forEach(r=>{ const b=document.createElement('button'); b.className='qrb'; b.textContent=r; b.onclick=()=>sendChat(r); q.appendChild(b); }); }
+function sendChat(t){ if(!currentNpc) return; t=t||document.getElementById('chat-in').value.trim(); if(!t) return; addMsg(t,'you'); document.getElementById('chat-in').value=''; document.getElementById('qr').innerHTML=''; setTimeout(()=>{ const tl=t.toLowerCase(); let r=currentNpc.res.default; Object.keys(currentNpc.res).forEach(k=>{ if(k!=='default'&&tl.includes(k)) r=currentNpc.res[k]; }); addMsg(r,'npc'); showQR(currentNpc.replies); traits.team=Math.min(100,traits.team+2); updateBars(); },700); }
+document.getElementById('chat-send').onclick=()=>sendChat();
+document.getElementById('chat-in').onkeydown=e=>{ if(e.key==='Enter') sendChat(); };
+
+// ════════════════════════════════════════
+// TRAITS + TOAST
+// ════════════════════════════════════════
+function updateBars(){ ['lead','comp','team','anal','cour'].forEach(k=>{ const v=Math.max(0,Math.min(100,traits[k])); document.getElementById('b-'+k).style.width=v+'%'; document.getElementById('v-'+k).textContent=v; }); }
+function toast(msg,c='#4fc3f7'){ const t=document.getElementById('toast'); t.textContent=msg; t.style.color=c; t.style.background=c+'22'; t.style.border='1px solid '+c; t.style.display='block'; clearTimeout(t._t); t._t=setTimeout(()=>t.style.display='none',3500); }
+
+// ════════════════════════════════════════
+// RAIN
+// ════════════════════════════════════════
+function showRainFX(){ const w=document.getElementById('weather'); w.style.display='block'; w.innerHTML=''; for(let i=0;i<80;i++){ const d=document.createElement('div'); d.className='rd'; d.style.left=Math.random()*100+'vw'; d.style.height=(Math.random()*24+16)+'px'; d.style.animationDuration=(Math.random()*.4+.45)+'s'; d.style.animationDelay=-Math.random()*2+'s'; d.style.opacity=Math.random()*.5+.3; w.appendChild(d); } }
+function hideRainFX(){ document.getElementById('weather').style.display='none'; }
+
+// ════════════════════════════════════════
+// MINIMAP
+// ════════════════════════════════════════
+function drawMinimap(){
+  const cv=document.getElementById('mm'), cx=cv.getContext('2d');
+  cx.clearRect(0,0,130,120); cx.fillStyle='#050e1a'; cx.fillRect(0,0,130,120);
+  if(floor===0){
+    cx.fillStyle='#0f1e30'; cx.fillRect(28,5,74,110);
+    cx.strokeStyle='#1a3a5c'; cx.lineWidth=1; cx.strokeRect(28,5,74,110);
+    zoneObjs.forEach((z,i)=>{
+      const sx=((z.x+14)/28)*74+28, sz=((z.z+44)/88)*110+5;
+      cx.fillStyle=i<zoneIdx?'#1db95488':i===zoneIdx?'#ff980088':'#33333355';
+      cx.beginPath(); cx.arc(sx,sz,5,0,Math.PI*2); cx.fill();
+      if(i===zoneIdx){ cx.strokeStyle='#ff9800'; cx.lineWidth=1.5; cx.beginPath(); cx.arc(sx,sz,7,0,Math.PI*2); cx.stroke(); }
+    });
+    npcMeshes.filter(n=>n.floor===0).forEach(n=>{ const nx=((n.h.position.x+14)/28)*74+28, nz=((n.h.position.z+44)/88)*110+5; cx.fillStyle=n.n.color; cx.beginPath(); cx.arc(nx,nz,3,0,Math.PI*2); cx.fill(); });
+  } else {
+    cx.fillStyle='#0d1a10'; cx.fillRect(8,5,114,110); cx.strokeStyle='#1a3a2a'; cx.lineWidth=1; cx.strokeRect(8,5,114,110);
+    cx.fillStyle='#ff6600'; cx.font='8px monospace'; cx.fillText('ENGINE BASEMENT',14,20);
+    cx.fillStyle='#ffaa0088'; cx.fillRect(52,48,26,18);
+    npcMeshes.filter(n=>n.floor===-1).forEach(n=>{ const nx=((n.h.position.x+14)/28)*114+8, nz=((n.h.position.z+44)/88)*110+5; cx.fillStyle=n.n.color; cx.beginPath(); cx.arc(nx,nz,4,0,Math.PI*2); cx.fill(); });
+    // Stair marker
+    cx.fillStyle='#ce93d8aa'; cx.beginPath(); cx.arc(((-11+14)/28)*74+28,((0+44)/88)*110+5,5,0,Math.PI*2); cx.fill();
+  }
+  // Player dot
+  const MX=floor===0?74:114, OX=floor===0?28:8;
+  const ppx=((pGrp.position.x+14)/28)*MX+OX, ppz=((pGrp.position.z+44)/88)*110+5;
+  cx.save(); cx.translate(ppx,ppz); cx.rotate(-camYaw);
+  cx.fillStyle='#4fc3f7'; cx.beginPath(); cx.moveTo(0,-7); cx.lineTo(4,4); cx.lineTo(-4,4); cx.closePath(); cx.fill();
+  cx.restore();
+}
+
+// ════════════════════════════════════════
+// REPORT
+// ════════════════════════════════════════
+function showReport(){
+  gameActive=false; document.getElementById('report').style.display='block';
+  const TL=[{k:'lead',l:'Leadership',c:'#4fc3f7'},{k:'comp',l:'Composure',c:'#1db954'},{k:'team',l:'Teamwork',c:'#ff9800'},{k:'anal',l:'Analytical',c:'#ce93d8'},{k:'cour',l:'Courage',c:'#ef5350'}];
+  const tb=document.getElementById('rep-traits'); tb.innerHTML='';
+  TL.forEach(({k,l,c})=>{ const v=Math.max(0,Math.min(100,traits[k])); tb.innerHTML+=`<div class="rtr"><span style="width:80px;font-size:10px;color:#8a9bb0">${l}</span><div class="rbar"><div class="rfill" style="width:${v}%;background:${c}"></div></div><span style="font-size:11px;color:${c};min-width:30px;text-align:right">${v}</span></div>`; });
+  const top=Object.entries(traits).sort((a,b)=>b[1]-a[1])[0][0];
+  const V={lead:'You command under pressure. Every crisis on MV Horizon, you took charge — calm, decisive, accountable. The path from Deck Cadet to Master Mariner is built for people like you.',comp:'The sea had storms — but you remained the stillest thing aboard. Officers who do not panic are worth ten who do.',team:'No ship sails on one person\'s shoulders. You communicated, escalated correctly, and protected your crew.',anal:'You read the charts, remembered COLREGS, and diagnosed problems first. Analytical thinking saves ships.',cour:'When the moment demanded action, you acted. Raw courage combined with maritime training is what legends are made of.'};
+  document.getElementById('verdict-text').textContent=V[top]||V.lead;
+  const P={lead:'⚓ Deck Officer (Class IV→I)\n🚢 Captain / Master Mariner\n🛳 Fleet Commander\n🏢 Port Operations Manager',comp:'🧭 Chief Officer / Navigation Specialist\n🌊 Marine Pilot\n📡 VTMS Operator\n🏛 Maritime Lecturer',team:'👥 First Officer\n🤝 Marine Superintendent\n🌐 Shipping Operations Manager\n📋 Harbour Master',anal:'⚙️ Marine Engineer (MEO IV→I)\n🔬 Ship Surveyor\n📊 Fleet Technical Manager\n🧑‍💼 Naval Architect',cour:'🆘 Indian Coast Guard\n🚁 SAR Coordinator\n⚠️ DGMS Safety Inspector\n🌏 IMO Safety Delegate'};
+  document.getElementById('rep-paths').innerHTML=(P[top]||P.lead).replace(/\n/g,'<br>');
+}
+
+// ════════════════════════════════════════
+// ANIMATION LOOP
+// ════════════════════════════════════════
+let tt=0;
+function animate(){
+  requestAnimationFrame(animate); tt+=.016;
+
+  if(gameActive&&!missionOpen&&!chatOpen){
+    const spd=.09;
+    const fwd=new THREE.Vector3(-Math.sin(camYaw),0,-Math.cos(camYaw));
+    const rgt=new THREE.Vector3(Math.cos(camYaw),0,-Math.sin(camYaw));
+    const mv=new THREE.Vector3();
+    if(moveState.f) mv.addScaledVector(fwd,spd);
+    if(moveState.b) mv.addScaledVector(fwd,-spd);
+    if(moveState.l) mv.addScaledVector(rgt,-spd);
+    if(moveState.r) mv.addScaledVector(rgt,spd);
+    isWalk=mv.length()>0;
+    if(isWalk) footstep(tt);
+    const cy=floor===0?DECK_Y:BASE_Y+.55;
+    pGrp.position.x=Math.max(-12.5,Math.min(12.5,pGrp.position.x+mv.x));
+    pGrp.position.z=Math.max(-42,Math.min(42,pGrp.position.z+mv.z));
+    if(isWalk) pGrp.rotation.y=Math.atan2(mv.x,mv.z)+Math.PI;
+    pGrp.position.y=cy+(isWalk?Math.abs(Math.sin(tt*8))*.05:0);
+
+    // Camera
+    const cx2=pGrp.position.x+Math.sin(camYaw)*camDist*Math.cos(camPitch);
+    const cy2=pGrp.position.y+Math.sin(camPitch)*camDist+.8;
+    const cz2=pGrp.position.z+Math.cos(camYaw)*camDist*Math.cos(camPitch);
+    cam.position.lerp(new THREE.Vector3(cx2,cy2,cz2),.12);
+    cam.lookAt(pGrp.position.x,pGrp.position.y+1.2,pGrp.position.z);
+
+    checkMission();
+
+    const nn=nearNpc();
+    document.getElementById('e-prompt').style.display=nn?'block':'none';
+    if(nn) document.getElementById('e-prompt').textContent='⬆ E — Talk to '+nn.name;
+
+    const ns=nearStairs();
+    document.getElementById('stair-prompt').style.display=ns?'block':'none';
+    if(ns) document.getElementById('stair-prompt').textContent=floor===0?'⬇ F — Engine Basement':'⬆ F — Main Deck';
+
+    const az=floor===0?ZONES.find(z=>{ const dx=pGrp.position.x-z.x,dz=pGrp.position.z-z.z; return Math.sqrt(dx*dx+dz*dz)<5; }):null;
+    document.getElementById('loc-name').textContent=az?'📍 '+az.label:floor===-1?'⚙️ ENGINE BASEMENT':'⚓ MV HORIZON';
+    document.getElementById('loc-sub').textContent=az?'Zone active':floor===0?'Follow arrow to next zone':'Explore the engine room';
+    const dir=Math.round((((-camYaw%(Math.PI*2))+(Math.PI*2))%(Math.PI*2))/(Math.PI/4))%8;
+    document.getElementById('compass').textContent=['↑','↗','→','↘','↓','↙','←','↖'][dir]||'🧭';
+    updateArrow();
+  }
+
+  animH(pGrp,tt,isWalk);
+
+  // Zone pulse (only active zone)
+  zoneObjs.forEach((z,i)=>{
+    if(i===zoneIdx){ const p=.4+Math.sin(tt*2+i)*.3; z.ringMat.opacity=p; z.fillMat.opacity=p*.55; }
+    z.grp.position.y=Math.sin(tt*1.5+i)*.04;
+  });
+
+  npcMeshes.forEach((n,i)=>{
+    if(!n.h.visible) return;
+    const iw=Math.sin(tt*.4+n.ph)>.3;
+    n.h.rotation.y+=Math.sin(tt*.8+i*1.3)*.005;
+    n.h.position.x=n.ox+Math.sin(tt*.3+n.ph)*1.2*.3;
+    n.h.position.z=n.oz+Math.cos(tt*.3+n.ph)*1.2*.3;
+    animH(n.h,tt+n.ph,iw,.7);
+  });
+
+  // Ocean animate
+  const pos=ocean2.geometry.attributes.position;
+  for(let i=0;i<pos.count;i++){
+    const x=pos.getX(i),z=pos.getZ(i);
+    pos.setY(i,Math.sin(x*.12+tt*.7)*.55+Math.sin(z*.1+tt*.5)*.45+Math.sin((x+z)*.07+tt*.9)*.25);
+  }
+  pos.needsUpdate=true; ocean2.geometry.computeVertexNormals();
+
+  radarScan.rotation.y=tt*1.5;
+  smokePs.forEach(s=>{ s.position.y+=s.userData.vy; s.position.x+=s.userData.vx; s.material.opacity-=.002; s.scale.addScalar(.006); if(s.position.y>46||s.material.opacity<.02){ s.position.set((Math.random()-.5)*1.5,34+Math.random()*2,-8+(Math.random()-.5)*1.5); s.material.opacity=.15+Math.random()*.2; s.scale.setScalar(1); } });
+  engGlow.intensity=3+Math.sin(tt*3)*1;
+  mastRed.intensity=Math.floor(tt*2)%2?3:.5;
+  stairGlow.intensity=2.5+Math.sin(tt*4)*.8;
+  drawMinimap();
+  renderer.render(scene,cam);
+}
+
+// ════════════════════════════════════════
+// START
+// ════════════════════════════════════════
+function pickRole(el,r){ playerRole=r; document.querySelectorAll('.rc').forEach(c=>c.classList.remove('sel')); el.classList.add('sel'); }
+function startGame(){
+  console.log("Starting game...");
+  try {
+    document.getElementById('intro').style.display='none';
+    gameActive=true;
+    if (scene && pH) scene.remove(pH);
+    pH=buildH(RAPP[playerRole]||RAPP.cadet); pH.position.set(0,DECK_Y,18);
+    const pl3=new THREE.PointLight(0x4fc3f7,1.5,7); pl3.position.set(0,3,0); pH.add(pl3);
+    scene.add(pH); pGrp=pH;
+    try { initAC(); } catch(e) { console.warn("Audio failed to start", e); }
+    npcMeshes.forEach(n=>n.h.visible=(n.floor===0));
+    refreshZones();
+    animate();
+    setTimeout(()=> { try { playHorn(); } catch(e){} }, 3000);
+    toast('⚓ Welcome aboard, '+playerRole.toUpperCase()+'! Follow the arrow.','#4fc3f7');
+    setTimeout(()=>toast('🎯 FIRST MISSION: Head to '+ZONES[0].label,'#ff9800'),4800);
+  } catch (err) {
+    console.error("Critical error starting game:", err);
+    // Force hide intro anyway so they can see the ship
+    document.getElementById('intro').style.display='none';
+  }
+}
+window.addEventListener('resize',()=>{ cam.aspect=innerWidth/innerHeight; cam.updateProjectionMatrix(); renderer.setSize(innerWidth,innerHeight); });
+</script>
+</body>
+</html>

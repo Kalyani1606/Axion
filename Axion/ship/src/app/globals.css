@@ -1,0 +1,106 @@
+@import "tailwindcss";
+
+@theme {
+  --color-neon-blue: #0ea5e9;
+  --background: #020617;
+  --foreground: #f8fafc;
+}
+
+:root {
+  --neon-glow: 0 0 15px rgba(14, 165, 233, 0.5);
+  --glass: rgba(15, 23, 42, 0.6);
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: 'Inter', sans-serif;
+  overflow-x: hidden;
+}
+
+@utility glass-card {
+  background-color: color-mix(in srgb, var(--color-slate-900) 40%, transparent);
+  backdrop-filter: blur(12px);
+  border: 1px solid color-mix(in srgb, var(--color-slate-700) 50%, transparent);
+  border-radius: 1rem;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+@utility neon-text {
+  text-shadow: var(--neon-glow);
+}
+
+@utility neon-border {
+  border: 1px solid color-mix(in srgb, var(--color-sky-500) 50%, transparent);
+  box-shadow: inset 0 0 10px rgba(14, 165, 233, 0.2), 0 0 15px rgba(14, 165, 233, 0.2);
+}
+
+@utility btn-primary {
+  position: relative;
+  padding: 0.75rem 2rem;
+  background-color: color-mix(in srgb, var(--color-sky-600) 20%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-sky-500) 50%, transparent);
+  border-radius: 9999px;
+  color: var(--color-sky-100);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  transition: all 0.3s;
+  
+  &:hover {
+    background-color: color-mix(in srgb, var(--color-sky-500) 30%, transparent);
+    box-shadow: 0 0 20px rgba(14, 165, 233, 0.4);
+  }
+  
+  &:active {
+    scale: 0.95;
+  }
+}
+
+/* Custom animations */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(0.8); opacity: 0.5; }
+  100% { transform: scale(1.3); opacity: 0; }
+}
+
+.animate-pulse-ring {
+  animation: pulse-ring 3s cubic-bezier(0.455, 0.03, 0.515, 0.955) infinite;
+}
+
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 10s linear infinite;
+}
+
+@keyframes scan {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100%); }
+}
+
+.hud-scanline {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: rgba(14, 165, 233, 0.1);
+  animation: scan 8s linear infinite;
+  pointer-events: none;
+}
+
+.ocean-gradient {
+  background: linear-gradient(to bottom, transparent, #020617);
+}
